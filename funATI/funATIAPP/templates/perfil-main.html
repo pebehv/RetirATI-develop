@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Perfil - FunATI{% endblock %}
+
+{% block page_title %}Perfil{% endblock %}
+
+{% block content %}
+<!-- Encabezado del perfil -->
+<div class="profile-header">
+    <div class="profile-main container">
+        <div class="profile-heading">
+            <div class="profile-image">
+                {% if profile.avatar %}
+                    <img src="{{ profile.avatar.url }}" alt="Avatar" class="avatar-img" />
+                {% else %}
+                    <img src="{% static 'assets/user-placeholder.png' %}" alt="Avatar" class="avatar-img" />
+                {% endif %}
+            </div>
+            <div class="profile-identity">
+                <h1 class="profile-name">{{ profile.user.username }}</h1>
+                <span class="profile-username">@{{ profile.user.username }}</span>
+                {% if not is_own_profile %}
+                    <div class="privacy-indicator" style="margin-top: 8px;">
+                        {% if profile_privacy == 'publico' %}
+                            <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 14px; color: var(--text-secondary);">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M12 6v6l4 2"></path>
+                                </svg>
+                                Perfil público
+                            </span>
+                        {% elif profile_privacy == 'privado' %}
+                            <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 14px; color: var(--text-secondary);">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                Solo amigos
+                            </span>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <p class="profile-bio">{{ profile.biography }}</p>
+        <div class="seguidos">
+            <a href="{% url 'funATIAPP:followers_profile' profile.id %}" class="seguidores">Seguidores</a>
+            <a href="{% url 'funATIAPP:follows_profile' profile.id %}" class="seguidores">Seguidos</a>
+        </div>
+    </div>
+    <div class="profile-details container">
+        <div class="detail-section">
+            <div class="detail-item"><span class="detail-icon">✉️</span><span class="detail-text">{{ profile.user.email }}</span></div>
+            <div class="detail-item"><span class="detail-icon">🆔</span><span class="detail-text">{{ profile.national_id }}</span></div>
+            <div class="detail-item"><span class="detail-icon">📅</span><span class="detail-text">{{ profile.birth_date }}</span></div>
+        </div>
+        <div class="detail-section">
+            <div class="detail-item"><span class="detail-icon">📖</span><span class="detail-text">{{ profile.favorite_books }}</span></div>
+            <div class="detail-item"><span class="detail-icon">🎨</span><span class="detail-text">{{ profile.favorite_color }}</span></div>
+            <div class="detail-item"><span class="detail-icon">🎵</span><span class="detail-text">{{ profile.favorite_music }}</span></div>
+            <div class="detail-item"><span class="detail-icon">🎮</span><span class="detail-text">{{ profile.favorite_games }}</span></div>
+            <div class="detail-item"><span class="detail-icon">💻</span><span class="detail-text">{{ profile.programming_languages }}</span></div>
+        </div>
+    </div>
+</div>
+<!-- Botón de editar perfil -->
+{% if user.is_authenticated and user.id == profile.user.id %}
+<div class="edit-profile-container">
+    <a href="{% url 'funATIAPP:edit_profile' %}" class="edit-profile">
+        <!-- SVG ... -->
+        Editar Perfil
+    </a>
+</div>
+{% endif %}
+<!-- Barra de navegación de perfil -->
+<div class="profile-nav">
+    <button class="profile-nav-btn active">Publicaciones</button>
+    <button class="profile-nav-btn">Respuestas</button>
+    <button class="profile-nav-btn">Multimedia</button>
+</div>
+<!-- Publicaciones del usuario -->
+<div class="publications">
+    {% for publication in publications %}
+    <a href="{% url 'funATIAPP:publication_detail' publication.id %}" class="post-link">
+    <div class="post">
+        <div class="post-header">
+            {% if publication.profile.avatar %}
+                <img src="{{ publication.profile.avatar.url }}" alt="{{ publication.profile.user.username }}" class="post-avatar" />
+            {% else %}
+                <img src="{% static 'assets/user-placeholder.png' %}" alt="{{ publication.profile.user.username }}" class="post-avatar" />
+            {% endif %}
+            <span class="post-username">{{ publication.profile.user.get_full_name|default:publication.profile.user.username }}</span>
+            <span class="post-handle">@{{ publication.profile.user.username }}</span>
+            <span class="post-time">{{ publication.created_at|timesince }} atrás</span>
+        </div>
+        <div class="post-content">{{ publication.content }}</div>
+        {% if publication.media %}
+        <div class="post-media-placeholder">
+            <div class="media-preview">
+                <img src="{{ publication.media.url }}" alt="Imagen publicación" class="publication-img" />
+            </div>
+        </div>
+        {% endif %}
+        <div class="post-actions">
+            <button class="post-action">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M9.53449 0.681511L6.42349 0.674011H6.42199C3.14149 0.674011 0.571991 3.24426 0.571991 6.52551C0.571991 9.59901 2.96149 11.93 6.17074 12.053V14.924C6.17074 15.005 6.20374 15.1385 6.26074 15.2263C6.36724 15.395 6.54874 15.4865 6.73474 15.4865C6.83824 15.4865 6.94249 15.458 7.03624 15.398C7.23424 15.272 11.891 12.293 13.1022 11.2685C14.5287 10.061 15.3822 8.29101 15.3845 6.53451V6.52176C15.38 3.24651 12.812 0.681511 9.53449 0.680761V0.681511ZM12.3747 10.4105C11.5242 11.1305 8.72824 12.9643 7.29574 13.8928V11.5025C7.29574 11.192 7.04449 10.94 6.73324 10.94H6.43624C3.69124 10.94 1.69774 9.08301 1.69774 6.52551C1.69774 3.87501 3.77374 1.79901 6.42274 1.79901L9.53299 1.80651H9.53449C12.1835 1.80651 14.2595 3.88101 14.261 6.52851C14.2587 7.96101 13.5545 9.41151 12.3755 10.4105H12.3747Z" fill="#5B7083"/>
+                </svg>
+                <span>{{ publication.comments.count }}</span>
+              </button>
+            <span class="ver-comentarios">Ver comentarios</span>
+        </div>
+    </div>
+    </a>
+    {% empty %}
+        {% if not can_view_publications %}
+            <div class="privacy-message" style="text-align: center; padding: 40px 20px; background: var(--bg-container); border-radius: 20px; margin: 20px 0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-secondary); margin-bottom: 16px;">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <circle cx="12" cy="16" r="1"></circle>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <h3 style="color: var(--text-primary); margin-bottom: 8px;">Este perfil es privado</h3>
+                {% if profile_privacy == 'privado' %}
+                    <p style="color: var(--text-secondary);">Solo los amigos de {{ profile.user.get_full_name|default:profile.user.username }} pueden ver sus publicaciones.</p>
+                {% endif %}
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
+                <p>No hay publicaciones aún.</p>
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Función para cargar un archivo HTML en un elemento
+    function loadHTML(selector, filePath) {
+        fetch(filePath)
+            .then(response => response.text())
+            .then(html => {
+                document.querySelector(selector).innerHTML = html;
+            })
+            .catch(error => console.error('Error al cargar el archivo:', error));
+    }
+
+    // Cargar el footer cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', () => {
+        loadHTML('#container-main', '{% url "funATIAPP:container" %}');
+    });
+</script>
+{% endblock %}

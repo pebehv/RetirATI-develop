@@ -1,0 +1,151 @@
+.post-content {
+    padding-left: 50px;
+    margin-top: 8px;
+}
+
+.post-media-placeholder {
+    padding-left: 50px;
+    margin-top: 12px;
+}
+
+.post-actions {
+    padding-left: 50px;
+    padding-top: 12px;
+    padding-bottom: 8px;
+}
+.funar{
+    background: var(--bg-container);
+    border-radius: 18px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 20px;
+    
+}
+    
+.funar-flex{
+    display: flex; 
+    gap: 0.5rem;
+}
+
+.funar-content-column {
+    width: 100%;
+}
+
+.funar-input-container {
+    margin-top: 0.5rem;
+}
+
+.icon{
+    margin-right: auto;
+}
+.buton-flex{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 5px;
+    padding-top: 10px;
+}
+.span-funar{
+    padding-left: 5px;
+}
+.button-funar{
+     background-color: #f344ea;
+    padding: 7px 10px;
+    border: transparent;
+    border-radius: 20px;
+}
+
+.button-funar:disabled {
+    background-color: #F89BF3;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Estilos para el preview de imagen */
+.media-preview-container {
+    margin-top: 8px;
+    position: relative;
+    display: none;
+}
+
+.media-preview-img {
+    width: 100%;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 2px solid #f344ea;
+}
+
+.media-preview-remove {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.media-preview-remove:hover {
+    background: rgba(0, 0, 0, 0.9);
+}
+@media (max-width: 600px) {
+    .post {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .post-content {
+        padding-left: 50px;
+        margin-top: 8px;
+    }
+    
+    .post-media-placeholder {
+        padding-left: 50px;
+        margin-top: 12px;
+    }
+    
+    .post-actions {
+        padding-left: 50px;
+        padding-top: 12px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .post-action {
+        align-self: flex-start;
+    }
+    
+    .ver-comentarios {
+        padding-left: 50px;
+        margin-left: 0;
+        align-self: flex-start;
+        font-size: 13px;
+    }
+    
+    .funar {
+        margin: 15px;
+        padding: 15px;
+    }
+    
+    .funar-avatar-column {
+        flex-shrink: 0;
+    }
+    
+    .funar-content-column {
+        width: 100%;
+        min-width: 0;
+    }
+    
+    .buton-flex {
+        padding-left: 0;
+        padding-top: 8px;
+    }
+}

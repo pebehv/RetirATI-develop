@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Test</title>
+    
+    <!-- Google Fonts - Lato -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Lato', Arial, sans-serif; margin: 20px; }
+        #messages { 
+            border: 1px solid #ccc; 
+            height: 300px; 
+            overflow-y: scroll; 
+            padding: 10px; 
+            background: #f9f9f9; 
+        }
+        .message { 
+            margin: 5px 0; 
+            padding: 5px; 
+            border-radius: 3px; 
+        }
+        .own-message { background: #dcf8c6; }
+        .other-message { background: #ffffff; }
+        .error-message { background: #ffcdd2; color: #c62828; }
+        .status { color: #666; font-style: italic; }
+        input, button { 
+            padding: 10px; 
+            margin: 5px; 
+            font-size: 14px; 
+        }
+        #messageInput { width: 300px; }
+    </style>
+</head>
+<body>
+    <h1>Chat Test - Room: {{ room_name }}</h1>
+    <p class="status">User: <strong>{{ user.username }}</strong> (ID: {{ user.id }})</p>
+    
+    <div id="messages"></div>
+    
+    <div>
+        <input type="text" id="receiverInput" placeholder="Receiver ID" value="">
+        <input type="text" id="messageInput" placeholder="Type your message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+    
+    <div>
+        <button onclick="clearMessages()">Clear Messages</button>
+        <button onclick="connectWebSocket()">Reconnect</button>
+        <span id="status" class="status">Disconnected</span>
+    </div>
+
+    {{ room_name|json_script:"room-name" }}
+    {{ user.id|json_script:"user-id" }}
+    <script>
+        const roomName = JSON.parse(document.getElementById('room-name').textContent);
+        const currentUserId = JSON.parse(document.getElementById('user-id').textContent);
+        let chatSocket = null;
+
+        function connectWebSocket() {
+            const wsUrl = `ws://${window.location.host}/ws/chat/${roomName}/`;
+            console.log('Connecting to:', wsUrl);
+            
+            chatSocket = new WebSocket(wsUrl);
+
+            chatSocket.onopen = function(e) {
+                console.log('WebSocket connected');
+                document.getElementById('status').textContent = 'Connected';
+                document.getElementById('status').style.color = 'green';
+            };
+
+            chatSocket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                console.log('Message received:', data);
+                
+                if (data.error) {
+                    addMessage(`Error: ${data.error}`, 'error-message');
+                } else {
+                    const isOwnMessage = data.sender_id === currentUserId;
+                    const messageClass = isOwnMessage ? 'own-message' : 'other-message';
+                    const messageText = `[${data.timestamp}] ${data.sender_username}: ${data.message}`;
+                    addMessage(messageText, messageClass);
+                }
+            };
+
+            chatSocket.onclose = function(e) {
+                console.log('WebSocket closed:', e);
+                document.getElementById('status').textContent = 'Disconnected';
+                document.getElementById('status').style.color = 'red';
+            };
+
+            chatSocket.onerror = function(e) {
+                console.error('WebSocket error:', e);
+                addMessage('WebSocket error occurred', 'error-message');
+            };
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const receiverInput = document.getElementById('receiverInput');
+            const message = messageInput.value.trim();
+            const receiverId = receiverInput.value.trim();
+
+            if (!message) {
+                alert('Please enter a message');
+                return;
+            }
+
+            if (!receiverId) {
+                alert('Please enter receiver ID');
+                return;
+            }
+
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                const data = {
+                    'message': message,
+                    'receiver_id': parseInt(receiverId)
+                };
+                console.log('Sending:', data);
+                chatSocket.send(JSON.stringify(data));
+                messageInput.value = '';
+            } else {
+                addMessage('WebSocket not connected', 'error-message');
+            }
+        }
+
+        function addMessage(text, className) {
+            const messages = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${className}`;
+            messageDiv.textContent = text;
+            messages.appendChild(messageDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function clearMessages() {
+            document.getElementById('messages').innerHTML = '';
+        }
+
+        // Enter key to send message
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Connect on page load
+        connectWebSocket();
+    </script>
+</body>
+</html> 

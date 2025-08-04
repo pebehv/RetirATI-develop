@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Configuración - FunATI{% endblock %}
+
+{% block page_title %}Configuración{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/settings.css' %}">
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="settings-container">
+    <form method="post" action="{% url 'funATIAPP:settings' %}">
+        {% csrf_token %}
+        
+        <div class="section">
+            <h2>Ajustes Generales</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Privacidad de publicaciones</label>
+                    <select class="form-control" name="privacy">
+                        <option value="publico" {% if user_settings.privacy == 'publico' %}selected{% endif %}>🌐 Público - Cualquiera puede ver mis publicaciones</option>
+                        <option value="privado" {% if user_settings.privacy == 'privado' %}selected{% endif %}>🔒 Privado - Solo mis amigos pueden ver mis publicaciones</option>
+                    </select>
+                    <small style="color: var(--text-secondary); font-size: 12px; margin-top: 4px; display: block;">
+                        Esta configuración controla quién puede ver las publicaciones en tu perfil.
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label>Idioma</label>
+                    <select class="form-control" name="language">
+                        <option value="es" {% if user_settings.language == 'es' %}selected{% endif %}>Español</option>
+                        <option value="en" {% if user_settings.language == 'en' %}selected{% endif %}>English</option>
+                        <option value="fr" {% if user_settings.language == 'fr' %}selected{% endif %}>Français</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Color</label>
+                    <select class="form-control" name="color" id="colorSelector">
+                        <option value="rosado" {% if user_settings.color_theme == 'rosado' %}selected{% endif %}>Rosado</option>
+                        <option value="azul" {% if user_settings.color_theme == 'azul' %}selected{% endif %}>Azul</option>
+                        <option value="verde" {% if user_settings.color_theme == 'verde' %}selected{% endif %}>Verde</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tema</label>
+                    <select class="form-control" name="theme">
+                        <option value="claro" {% if user_settings.theme_mode == 'claro' %}selected{% endif %}>Modo Claro</option>
+                        <option value="oscuro" {% if user_settings.theme_mode == 'oscuro' %}selected{% endif %}>Modo Oscuro</option>
+                        <option value="automatico" {% if user_settings.theme_mode == 'automatico' %}selected{% endif %}>Automático</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Notificaciones</h2>
+            <div class="notification-item">
+                <div class="notification-text">
+                    Recibe correos electrónicos para saber qué pasa cuando no estás en FunATI. Puedes desactivarlos en cualquier momento. Más información en <a href="#">hola@funati.com</a>
+                </div>
+                <div class="toggle-switch" id="notificationToggle">
+                    <input type="checkbox" name="notifications" id="notifications" {% if user_settings.email_notifications %}checked{% endif %} style="display: none;">
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Seguridad</h2>
+            <div class="password-row">
+                <div class="form-group">
+                    <label>Contraseña vieja</label>
+                    <input type="password" class="password-input" name="old_password" placeholder="Ingresa tu contraseña actual">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña nueva</label>
+                    <input type="password" class="password-input" name="new_password" placeholder="Ingresa tu nueva contraseña">
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <div class="button-left">
+                    <button type="button" class="btn btn-secondary" onclick="changePassword()">Cambiar contraseña</button>
+                    <a href="{% url 'funATIAPP:logout' %}" class="btn btn-secondary">Cerrar sesión</a>
+                </div>
+                <button type="submit" class="btn btn-save">Guardar</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Función para el toggle de notificaciones
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleSwitch = document.getElementById('notificationToggle');
+    const checkbox = document.getElementById('notifications');
+    
+    toggleSwitch.addEventListener('click', () => {
+        checkbox.checked = !checkbox.checked;
+        updateToggleAppearance();
+    });
+    
+    function updateToggleAppearance() {
+        if (checkbox.checked) {
+            toggleSwitch.classList.remove('inactive');
+        } else {
+            toggleSwitch.classList.add('inactive');
+        }
+    }
+    
+    // Inicializar apariencia
+    updateToggleAppearance();
+    
+    // Cambiar color dinámicamente
+    const colorSelector = document.getElementById('colorSelector');
+    colorSelector.addEventListener('change', (e) => {
+        if (window.ThemeManager) {
+            window.ThemeManager.applyColorTheme(e.target.value);
+        }
+    });
+    
+    // Cambiar tema dinámicamente
+    const themeSelector = document.querySelector('select[name="theme"]');
+    if (themeSelector) {
+        themeSelector.addEventListener('change', (e) => {
+            if (window.ThemeManager) {
+                window.ThemeManager.applyTheme(e.target.value);
+            }
+        });
+    }
+});
+
+function changePassword() {
+    const oldPassword = document.querySelector('input[name="old_password"]').value;
+    const newPassword = document.querySelector('input[name="new_password"]').value;
+    
+    if (!oldPassword || !newPassword) {
+        alert('Por favor, completa ambos campos de contraseña.');
+        return;
+    }
+    
+    // Obtener el token CSRF
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Enviar petición AJAX
+    fetch('{% url "funATIAPP:change_password" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrfToken,
+        },
+        body: `old_password=${encodeURIComponent(oldPassword)}&new_password=${encodeURIComponent(newPassword)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Contraseña cambiada exitosamente.');
+            // Limpiar los campos
+            document.querySelector('input[name="old_password"]').value = '';
+            document.querySelector('input[name="new_password"]').value = '';
+        } else {
+            let errorMessage = 'Error al cambiar la contraseña:\n';
+            if (data.errors) {
+                for (const [field, error] of Object.entries(data.errors)) {
+                    errorMessage += `• ${error}\n`;
+                }
+            } else if (data.message) {
+                errorMessage += data.message;
+            }
+            alert(errorMessage);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión. Por favor, inténtalo de nuevo.');
+    });
+}
+</script>
+{% endblock %}

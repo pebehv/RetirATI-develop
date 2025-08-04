@@ -1,0 +1,46 @@
+# Git files
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Django
+*.log
+local_settings.py
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node modules (if any)
+node_modules/
+
+# Documentation
+*.md
+README.md
+
+# Database (will be mounted as volume)
+funATI/db.sqlite3
+
+# Media files (will be mounted as volume)
+funATI/media/
+
+# Static files (will be collected during build)
+funATI/staticfiles/ 

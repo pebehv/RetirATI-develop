@@ -1,0 +1,5 @@
+Django==5.2.3
+Pillow
+channels==4.0.0
+channels-redis==4.2.0
+daphne==4.2.1

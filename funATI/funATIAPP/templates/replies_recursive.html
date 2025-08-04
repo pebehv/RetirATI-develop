@@ -1,0 +1,48 @@
+{# replies_recursive.html - template recursivo para respuestas anidadas #}
+{% load static %}
+{% for reply in replies %}
+<div class="post reply" style="margin-left: {{ parent_margin }}px; margin-top: 8px;" id="comment-{{ reply.id }}">
+    <div class="post-header">
+        <a href="{% url 'funATIAPP:profile_detail' reply.user.profile.id %}" class="profile-link" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 8px;">
+            {% if reply.user.profile.avatar %}
+                <img src="{{ reply.user.profile.avatar.url }}" alt="{{ reply.user.username }}" class="post-avatar" />
+            {% else %}
+                <img src="{% static 'assets/user-placeholder.png' %}" alt="{{ reply.user.username }}" class="post-avatar" />
+            {% endif %}
+            <span class="post-username">{{ reply.user.username }}</span>
+        </a>
+        <span class="post-time">{{ reply.created_at|timesince }} atrás</span>
+    </div>
+    <div class="post-content">{{ reply.content }}</div>
+    <div style="display: flex; justify-content: flex-end; align-items: center; margin-top: 8px;">
+        <button class="reply-btn button-funar" onclick="showReplyForm('{{ reply.id }}')">Responder</button>
+    </div>
+    <div class="reply-form-container" id="reply-form-{{ reply.id }}" style="display:none;">
+        <form method="post" class="funar reply-form" style="margin-bottom: 16px;">
+            {% csrf_token %}
+            <div class="funar-flex">
+                <div class="funar-avatar-column">
+                    {% if user.profile.avatar %}
+                        <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" class="post-avatar" />
+                    {% else %}
+                        <img src="{% static 'assets/user-placeholder.png' %}" alt="{{ user.username }}" class="post-avatar" />
+                    {% endif %}
+                </div>
+                <div class="funar-content-column">
+                    <div class="funar-input-container">
+                        <span class="span-funar reply-contenteditable" contenteditable="true">Escribe una respuesta...</span>
+                        <input type="hidden" name="content" class="hidden-reply-content" />
+                        <input type="hidden" name="parent" value="{{ reply.id }}">
+                    </div>
+                </div>
+            </div>
+            <div class="buton-flex" style="position: relative; min-height: 50px;">
+                <div style="margin-left: auto;">
+                    <button type="submit" class="button-funar" id="funar-btn-reply-{{ reply.id }}">Responder</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    {% include "replies_recursive.html" with replies=reply.replies.all parent_margin=parent_margin|add:32 only %}
+</div>
+{% endfor %}

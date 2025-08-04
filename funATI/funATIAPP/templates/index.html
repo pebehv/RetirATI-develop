@@ -1,0 +1,45 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Google Fonts - Lato -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap" rel="stylesheet">
+    
+    <link href="{% static 'css/home.css' %}" rel="stylesheet">
+    <title>FunATI - Inicio</title>
+</head>
+<body>
+    <main>
+        <nav class="navbar">
+            <div class="navbar__logo">
+                <img src="{% static 'assets/logo.png' %}" alt="Logo" height="40" />
+            </div>
+            <a href="{% url 'funATIAPP:login' %}" class="btn navbar__cta">
+                Ir a la app <span class="btn__icon">&gt;</span>
+            </a>
+        </nav>
+        <section class="home">
+            <div class="home-left">
+                <div class="home-description">
+                    <div class="home-description--subtitle">
+                        <h2>Directo y sin filtros</h2>
+                    </div>
+                    <h1 class="home-description--title">Porque tu paciencia tiene un límite... ¡y tu feed no!</h1>
+                    <p class="home-description--paragraph">La app definitiva para que esa persona que te cae mal se entere... ¡y todo el mundo también!</p>
+                    <a href="{% url 'funATIAPP:login' %}" class="btn">
+                        Ir a la app <span class="btn__icon">&gt;</span>
+                    </a>
+                </div>
+            </div>
+            <div class="home-right">
+                <img src="{% static 'assets/home-img.png' %}" alt="FunATI - Directo y sin filtros">
+            </div>
+        </section>
+    </main>
+</body>
+</html>

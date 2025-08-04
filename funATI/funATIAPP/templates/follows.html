@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Seguidos - FunATI{% endblock %}
+
+{% block page_title %}
+<button class="back-button">←</button>
+<div class="user-header">
+    <h1>{{ profile.user.get_full_name|default:profile.user.username }}</h1>
+    <span class="username">@{{ profile.user.username }}</span>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/follows.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="followers-tabs">
+    <a href="{% url 'funATIAPP:followers' %}{% if profile.id != user.profile.id %}?profile_id={{ profile.id }}{% endif %}" class="tab-link"><button type="button">Seguidores</button></a>
+    <button class="active">Siguiendo</button>
+</div>      
+
+<!-- Contenedor general -->
+<div class="followers-container">
+    {% if following %}
+        {% for followed in following %}
+        <div class="follower-item">
+            <a href="{% url 'funATIAPP:profile_detail' followed.id %}">
+                {% if followed.avatar %}
+                    <img src="{{ followed.avatar.url }}" alt="Foto de perfil" class="profile-pic" />
+                {% else %}
+                    <img src="{% static 'assets/user-placeholder.png' %}" alt="Foto de perfil" class="profile-pic" />
+                {% endif %}
+            </a>
+            <div class="follower-info">
+                <a href="{% url 'funATIAPP:profile_detail' followed.id %}" class="profile-link"><strong>{{ followed.user.get_full_name|default:followed.user.username }}</strong></a>
+                <a href="{% url 'funATIAPP:profile_detail' followed.id %}" class="profile-link"><span class="username">@{{ followed.user.username }}</span></a>
+                <p class="bio">{{ followed.biography|default:'Sin biografía' }}</p>
+            </div>
+            {% if followed != user.profile %}
+                <form method="post" action="" style="display:inline;">
+                    {% csrf_token %}
+                    <button class="follow-button follow" name="unfollow" value="{{ followed.id }}">Dejar de seguir</button>
+                </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>No sigue a nadie aún.</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Función para cargar un archivo HTML en un elemento
+    function loadHTML(selector, filePath) {
+        fetch(filePath)
+            .then(response => response.text())
+            .then(html => {
+                document.querySelector(selector).innerHTML = html;
+            })
+            .catch(error => console.error('Error al cargar el archivo:', error));
+    }
+
+    // Cargar el footer cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', () => {
+        // Puedes cargar también un header si tuvieras:
+        // loadHTML('#header-placeholder', 'header.html');
+    });
+</script>
+{% endblock %}

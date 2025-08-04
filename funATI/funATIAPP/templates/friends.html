@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Amigos - FunATI{% endblock %}
+
+{% block page_title %}Amigos{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/follows.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="followers-container">
+    {% if friends %}
+        <h3 style="margin-bottom: 16px;">Tus amigos</h3>
+        {% for friend in friends %}
+        <div class="follower-item">
+            <a href="{% url 'funATIAPP:profile_detail' friend.id %}">
+                {% if friend.avatar %}
+                    <img src="{{ friend.avatar.url }}" alt="Foto de perfil" class="profile-pic" />
+                {% else %}
+                    <img src="{% static 'assets/user-placeholder.png' %}" alt="Foto de perfil" class="profile-pic" />
+                {% endif %}
+            </a>
+            <div class="follower-info">
+                <a href="{% url 'funATIAPP:profile_detail' friend.id %}" class="profile-link"><strong>{{ friend.user.get_full_name|default:friend.user.username }}</strong></a>
+                <a href="{% url 'funATIAPP:profile_detail' friend.id %}" class="profile-link"><span class="username">@{{ friend.user.username }}</span></a>
+                <p class="bio">{{ friend.biography|default:'Sin biografía' }}</p>
+            </div>
+            <form method="post" action="" style="display:inline;">
+                {% csrf_token %}
+                <button class="follow-button following amigo-hover-btn" name="remove_friend" value="{{ friend.id }}">Amigos</button>
+            </form>
+        </div>
+        {% endfor %}
+        {% if recommendations %}
+        <h3 style="margin: 32px 0 16px 0;">Quizá te interese</h3>
+        {% endif %}
+    {% else %}
+        <h3 style="margin-bottom: 16px;">Recomendaciones de personas</h3>
+    {% endif %}
+    {% for rec in recommendations %}
+    <div class="follower-item">
+        <a href="{% url 'funATIAPP:profile_detail' rec.id %}">
+            {% if rec.avatar %}
+                <img src="{{ rec.avatar.url }}" alt="Foto de perfil" class="profile-pic" />
+            {% else %}
+                <img src="{% static 'assets/user-placeholder.png' %}" alt="Foto de perfil" class="profile-pic" />
+            {% endif %}
+        </a>
+        <div class="follower-info">
+            <a href="{% url 'funATIAPP:profile_detail' rec.id %}" class="profile-link"><strong>{{ rec.user.get_full_name|default:rec.user.username }}</strong></a>
+            <a href="{% url 'funATIAPP:profile_detail' rec.id %}" class="profile-link"><span class="username">@{{ rec.user.username }}</span></a>
+            <p class="bio">{{ rec.biography|default:'Sin biografía' }}</p>
+        </div>
+        <form method="post" action="" style="display:inline;">
+            {% csrf_token %}
+            <button class="follow-button" name="add_friend" value="{{ rec.id }}">Agregar amigo</button>
+        </form>
+        {% if rec in user.profile.following.all %}
+        <form method="post" action="" style="display:inline;">
+            {% csrf_token %}
+            <button class="follow-button unfollow" name="unfollow" value="{{ rec.id }}">Dejar de seguir</button>
+        </form>
+        {% else %}
+        <form method="post" action="" style="display:inline;">
+            {% csrf_token %}
+            <button class="follow-button" name="follow" value="{{ rec.id }}">Seguir</button>
+        </form>
+        {% endif %}
+    </div>
+    {% empty %}
+        <p>No hay recomendaciones por ahora.</p>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Función para cargar un archivo HTML en un elemento
+    function loadHTML(selector, filePath) {
+        fetch(filePath)
+            .then(response => response.text())
+            .then(html => {
+                document.querySelector(selector).innerHTML = html;
+            })
+            .catch(error => console.error('Error al cargar el archivo:', error));
+    }
+
+    // Cargar el footer cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', () => {
+        // Puedes cargar también un header si tuvieras:
+        // loadHTML('#header-placeholder', 'header.html');
+    });
+</script>
+{% endblock %}

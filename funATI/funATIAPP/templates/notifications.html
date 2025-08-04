@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Notificaciones - FunATI{% endblock %}
+
+{% block page_title %}Notificaciones{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/notifications.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Contenedor de notificaciones -->
+<div class="notifications-container">
+    {% if notifications %}
+        {% for notification in notifications %}
+            <!-- Hacer clickeable según el tipo de notificación -->
+            {% if notification.notification_type == 'follow' or notification.notification_type == 'friend' %}
+                <a href="{% url 'funATIAPP:profile_detail' notification.sender.profile.id %}" class="notification-link">
+            {% elif notification.notification_type == 'comment' and notification.publication %}
+                <a href="{% url 'funATIAPP:publication_detail' notification.publication.id %}" class="notification-link">
+            {% else %}
+                <div class="notification-link">
+            {% endif %}
+                <div class="notification-item">
+                    <div class="notification-icon">
+                        {% if notification.notification_type == 'follow' or notification.notification_type == 'friend' %}
+                            <!-- Ícono para follows/amigos -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="26" viewBox="0 0 24 26" fill="none" class="notification-symbol">
+                                <path d="M11.6807 15C17.2041 15.0001 21.858 18.4041 23.2706 23.043C23.7531 24.6279 22.3668 26 20.71 26H2.65142C0.994585 26 -0.391715 24.628 0.0908757 23.043C1.50342 18.4041 6.15731 15 11.6807 15ZM11.6807 0C15.3045 9.34931e-05 18.2422 3.2597 18.2422 7.28027C18.2421 11.3007 15.3044 13 11.6807 13C8.05693 13 5.11933 11.3007 5.1192 7.28027C5.1192 3.25964 8.05685 0 11.6807 0Z" fill="#2AA3EF"/>
+                            </svg>
+                        {% elif notification.notification_type == 'comment' %}
+                            <!-- Ícono para respuestas -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="23" viewBox="0 0 24 23" fill="none" class="notification-symbol">
+                                <path d="M0 7.25632C0.48 15.896 8 21.1763 11.52 22.6163C12.48 23.0567 24 16.855 24 5.33541C23.52 2.93632 22.4805 2.26789 21.6 1.41582C18.4384 -1.6437 14.0262 0.910075 12 2.93632C7.68 -0.903961 0.48 -1.38396 0 7.25632Z" fill="#DE2960"/>
+                            </svg>
+                        {% endif %}
+                        
+                        <!-- Avatar del usuario que generó la notificación -->
+                        {% if notification.sender.profile.avatar %}
+                            <img src="{{ notification.sender.profile.avatar.url }}" alt="{{ notification.sender.username }}" class="profile-pic" />
+                        {% else %}
+                            <img src="{% static 'assets/user-placeholder.png' %}" alt="{{ notification.sender.username }}" class="profile-pic" />
+                        {% endif %}
+                    </div>
+                    <div class="notification-content">
+                        {% if notification.notification_type == 'follow' %}
+                            <strong>{{ notification.sender.username }}</strong> te está siguiendo
+                        {% elif notification.notification_type == 'friend' %}
+                            <strong>{{ notification.sender.username }}</strong> es ahora tu amigo
+                        {% elif notification.notification_type == 'comment' %}
+                            <strong>{{ notification.sender.username }}</strong> respondió a tu publicación:<br />
+                            {{ notification.comment.content|truncatechars:100 }}
+                        {% else %}
+                            {{ notification.message }}
+                        {% endif %}
+                        <div class="notification-time">
+                            {{ notification.created_at|timesince }} atrás
+                        </div>
+                    </div>
+                </div>
+            {% if notification.notification_type == 'follow' or notification.notification_type == 'friend' or notification.notification_type == 'comment' %}
+                </a>
+            {% else %}
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        <div class="no-notifications">
+            <p>No tienes notificaciones aún.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

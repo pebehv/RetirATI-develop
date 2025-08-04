@@ -1,0 +1,453 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Chats - FunATI{% endblock %}
+
+{% block page_title %}Chats{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/chats.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="flex-wrapper">
+    <div class="container">
+        <div class="search-container">
+            <div class="search-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="19" viewBox="0 0 17 19" fill="none">
+                    <path d="M12.4145 14.0333C13.9506 12.6821 14.9286 10.6452 14.9286 8.36667C14.9286 4.29817 11.8106 1 7.96429 1C4.11802 1 1 4.29817 1 8.36667C1 12.4352 4.11802 15.7333 7.96429 15.7333C9.65651 15.7333 11.2078 15.0949 12.4145 14.0333ZM12.4145 14.0333L16 18" stroke="#6E767D" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <input type="text" class="search-bar" placeholder="Buscar amigos" id="search-friends" value="{{ search_query }}">
+            <div class="message-icon"></div>
+        </div>
+
+        <ul class="contacts-list" id="contacts-list">
+            {% if friends_with_messages %}
+                {% for item in friends_with_messages %}
+                <li class="contact-item" data-friend-id="{{ item.friend.id }}" onclick="loadChat({{ item.friend.id }})">
+                    {% if item.friend.avatar %}
+                        <img src="{{ item.friend.avatar.url }}" alt="{{ item.friend.user.username }}" class="profile-pic">
+                    {% else %}
+                        <img src="{% static 'assets/user-placeholder.png' %}" alt="{{ item.friend.user.username }}" class="profile-pic">
+                    {% endif %}
+                    <div class="contact-info">
+                        <div class="contact-name">{{ item.friend.user.first_name|default:item.friend.user.username }}</div>
+                        <div class="contact-username">@{{ item.friend.user.username }}</div>
+                    </div>
+                    <div class="contact-meta">
+                        {% if item.last_message %}
+                            <div class="contact-date">{{ item.last_message.timestamp|date:"M d" }}</div>
+                            {% if item.last_message.sender != user and not item.last_message.is_read %}
+                                <div class="notification-badge">1</div>
+                            {% else %}
+                                <div class="status-indicator checkmark"></div>
+                            {% endif %}
+                        {% else %}
+                            <div class="contact-date">Nueva</div>
+                        {% endif %}
+                    </div>
+                </li>
+                {% endfor %}
+            {% else %}
+                <li class="contact-item">
+                    <div class="contact-info" style="text-align: center; width: 100%;">
+                        <div class="contact-name">No tienes amigos aún</div>
+                        <div class="contact-username">
+                            <a href="{% url 'funATIAPP:friends' %}" style="color: #e91e63;">¡Encuentra amigos aquí!</a>
+                        </div>
+                    </div>
+                </li>
+            {% endif %}
+        </ul>
+    </div>
+    <div class="chat">
+        <div class="chat-container" id="chat-container">
+            <!-- Initial message when no chat is selected -->
+            <div class="chat-placeholder" id="chat-placeholder">
+                <div>
+                    <h3>Selecciona un amigo para comenzar a chatear</h3>
+                    <p>Haz clic en cualquier contacto de la lista para iniciar una conversación</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% csrf_token %}
+<script>
+let currentSocket = null;
+let currentFriendId = null;
+
+// Search functionality
+document.getElementById('search-friends').addEventListener('input', function() {
+    const searchQuery = this.value;
+    if (searchQuery.length >= 2 || searchQuery.length === 0) {
+        searchFriends(searchQuery);
+    }
+});
+
+function searchFriends(query) {
+    const url = `{% url 'funATIAPP:search_friends_api' %}?q=${encodeURIComponent(query)}`;
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            updateContactsList(data.friends, query);
+        })
+        .catch(error => console.error('Error searching friends:', error));
+}
+
+function updateContactsList(friends, searchQuery = '') {
+    const contactsList = document.getElementById('contacts-list');
+    if (friends.length === 0) {
+        // If it's an empty search (user cleared the search), show the original "no friends" message
+        // If it's a search with results, show "no results found"
+        const message = searchQuery === '' ? 
+            `<li class="contact-item">
+                <div class="contact-info" style="text-align: center; width: 100%;">
+                    <div class="contact-name">No tienes amigos aún</div>
+                    <div class="contact-username">
+                        <a href="{% url 'funATIAPP:friends' %}" style="color: #e91e63;">¡Encuentra amigos aquí!</a>
+                    </div>
+                </div>
+            </li>` : 
+            `<li class="contact-item">
+                <div class="contact-info" style="text-align: center; width: 100%;">
+                    <div class="contact-name">No se encontraron amigos</div>
+                </div>
+            </li>`;
+        
+        contactsList.innerHTML = message;
+        return;
+    }
+
+    contactsList.innerHTML = friends.map(friend => `
+        <li class="contact-item" data-friend-id="${friend.id}" onclick="loadChat(${friend.id})">
+            <img src="${friend.avatar_url || '{% static "assets/user-placeholder.png" %}'}" alt="${friend.username}" class="profile-pic">
+            <div class="contact-info">
+                <div class="contact-name">${friend.first_name || friend.username}</div>
+                <div class="contact-username">@${friend.username}</div>
+            </div>
+            <div class="contact-meta">
+                ${friend.last_message ? `
+                    <div class="contact-date">${friend.last_message.timestamp || 'Nueva'}</div>
+                    ${friend.last_message.is_unread ? 
+                        '<div class="notification-badge">1</div>' : 
+                        '<div class="status-indicator checkmark"></div>'
+                    }
+                ` : '<div class="contact-date">Nueva</div>'}
+            </div>
+        </li>
+    `).join('');
+}
+
+function loadChat(friendId) {
+    if (currentSocket) {
+        currentSocket.close();
+    }
+    
+    currentFriendId = friendId;
+    
+    // Update active contact
+    document.querySelectorAll('.contact-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    const activeContact = document.querySelector(`[data-friend-id="${friendId}"]`);
+    if (activeContact) {
+        activeContact.classList.add('active');
+        // Remove notification badge when opening chat
+        const notificationBadge = activeContact.querySelector('.notification-badge');
+        if (notificationBadge) {
+            notificationBadge.remove();
+            // Add checkmark instead
+            const contactMeta = activeContact.querySelector('.contact-meta');
+            if (contactMeta && !contactMeta.querySelector('.status-indicator')) {
+                contactMeta.insertAdjacentHTML('beforeend', '<div class="status-indicator checkmark"></div>');
+            }
+        }
+    }
+    
+    // Load chat messages
+    fetch(`{% url 'funATIAPP:get_messages_api' friend_id=0 %}`.replace('0', friendId))
+        .then(response => response.json())
+        .then(data => {
+            displayMessages(data.messages, friendId);
+            connectWebSocket(friendId);
+        })
+        .catch(error => console.error('Error loading chat:', error));
+}
+
+function displayMessages(messages, friendId) {
+    const friend = document.querySelector(`[data-friend-id="${friendId}"] .contact-name`).textContent;
+    const username = document.querySelector(`[data-friend-id="${friendId}"] .contact-username`).textContent;
+    const profilePicSrc = document.querySelector(`[data-friend-id="${friendId}"] .profile-pic`).src;
+    
+    const chatContainer = document.getElementById('chat-container');
+    chatContainer.innerHTML = `
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <img src="${profilePicSrc}" alt="${friend}" class="profile-pic">
+            <div class="contact-info">
+                <div class="contact-name">${friend}</div>
+                <div class="contact-username">${username}</div>
+            </div>
+        </div>
+
+        <!-- Chat Messages -->
+        <div class="chat-messages" id="chat-messages">
+            ${messages.map(msg => `
+                <div class="message ${msg.is_sent ? 'sent' : 'received'}">
+                    ${!msg.is_sent ? `<img src="${profilePicSrc}" alt="${msg.sender_username}" class="profile-pic" style="width: 30px; height: 30px;">` : ''}
+                    <div>
+                        <div class="message-bubble">
+                            ${msg.media_url ? `
+                                <div class="message-media">
+                                    ${msg.media_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? 
+                                        `<img src="${msg.media_url}" alt="Media" style="max-width: 200px; max-height: 200px; border-radius: 8px; cursor: pointer;" onclick="window.open('${msg.media_url}', '_blank')">` : 
+                                        `<video controls style="max-width: 200px; max-height: 200px; border-radius: 8px;"><source src="${msg.media_url}"></video>`
+                                    }
+                                </div>
+                            ` : ''}
+                            ${msg.content ? `<div>${msg.content}</div>` : ''}
+                        </div>
+                        <div class="message-time">
+                            ${formatTimestamp(msg.timestamp)} ${msg.is_sent ? '<span class="checkmark"></span>' : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+
+        <!-- Message Input -->
+        <div class="message-input-container">
+            <div class="message-input-wrapper">
+                <div class="input-icons">
+                    <label for="chat-media-input" class="icon-attachment" style="cursor: pointer;" title="Adjuntar archivo">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <path d="M9 0C4.05 0 0 4.05 0 9C0 13.95 4.05 18 9 18C13.95 18 18 13.95 18 9C18 4.05 13.95 0 9 0ZM9 16.2C5.04 16.2 1.8 12.96 1.8 9C1.8 5.04 5.04 1.8 9 1.8C12.96 1.8 16.2 5.04 16.2 9C16.2 12.96 12.96 16.2 9 16.2Z" fill="#6E767D"/>
+                            <path d="M9 4.5C8.586 4.5 8.25 4.836 8.25 5.25V8.25H5.25C4.836 8.25 4.5 8.586 4.5 9C4.5 9.414 4.836 9.75 5.25 9.75H8.25V12.75C8.25 13.164 8.586 13.5 9 13.5C9.414 13.5 9.75 13.164 9.75 12.75V9.75H12.75C13.164 9.75 13.5 9.414 13.5 9C13.5 8.586 13.164 8.25 12.75 8.25H9.75V5.25C9.75 4.836 9.414 4.5 9 4.5Z" fill="#6E767D"/>
+                        </svg>
+                    </label>
+                    <input type="file" id="chat-media-input" style="display: none;" accept="image/*,video/*" onchange="handleFileSelect(event)">
+                </div>
+                <input type="text" class="message-input" id="message-input" placeholder="Comienza tu mensaje">
+                <div class="input-icons">
+                    <span class="send-button icon-send" onclick="sendMessage()" style="cursor: pointer;" title="Enviar mensaje">➤</span>
+                </div>
+            </div>
+            <div id="file-preview" style="display: none; padding: 10px; background: #f5f5f5; margin-top: 5px; border-radius: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div id="file-info"></div>
+                    <button onclick="removeFilePreview()" style="background: #ff4757; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer;">×</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Scroll to bottom
+    const messagesContainer = document.getElementById('chat-messages');
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    
+    // Add enter key listener
+    document.getElementById('message-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+}
+
+function connectWebSocket(friendId) {
+    const currentUserId = {{ user.id }};
+    const roomName = `${Math.min(currentUserId, friendId)}_${Math.max(currentUserId, friendId)}`;
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const socketUrl = `${wsProtocol}//${window.location.host}/ws/chat/${roomName}/`;
+    
+    currentSocket = new WebSocket(socketUrl);
+    
+    currentSocket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        addMessageToChat(data);
+    };
+    
+    currentSocket.onclose = function() {
+        console.log('WebSocket connection closed');
+    };
+    
+    currentSocket.onerror = function(error) {
+        console.error('WebSocket error:', error);
+    };
+}
+
+function sendMessage() {
+    const messageInput = document.getElementById('message-input');
+    const message = messageInput.value.trim();
+    
+    if ((message || selectedFile) && currentFriendId) {
+        if (selectedFile) {
+            // Send via API for file uploads
+            sendMessageWithFile(message, selectedFile);
+        } else if (currentSocket) {
+            // Send via WebSocket for text-only messages
+            currentSocket.send(JSON.stringify({
+                'message': message,
+                'receiver_id': currentFriendId
+            }));
+            messageInput.value = '';
+        }
+    }
+}
+
+function sendMessageWithFile(content, file) {
+    const formData = new FormData();
+    formData.append('receiver_id', currentFriendId);
+    formData.append('content', content);
+    if (file) {
+        formData.append('media', file);
+    }
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    const token = csrfToken ? csrfToken.value : null;
+    
+    fetch('{% url "funATIAPP:send_message_api" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': token,
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Add message to chat display
+            addMessageToChat({
+                message: data.message.content,
+                sender_id: data.message.sender_id,
+                sender_username: data.message.sender_username,
+                timestamp: data.message.timestamp,
+                message_id: data.message.id,
+                media_url: data.message.media_url
+            });
+            
+            // Clear inputs
+            document.getElementById('message-input').value = '';
+            removeFilePreview();
+        } else {
+            alert('Error enviando mensaje: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error enviando mensaje');
+    });
+}
+
+function addMessageToChat(messageData) {
+    const messagesContainer = document.getElementById('chat-messages');
+    const currentUserId = {{ user.id }};
+    const isSent = messageData.sender_id === currentUserId;
+    
+    // Get the profile picture from the current active contact
+    const activeProfilePicSrc = currentFriendId ? 
+        document.querySelector(`[data-friend-id="${currentFriendId}"] .profile-pic`).src : 
+        "{% static 'assets/user-placeholder.png' %}";
+    
+    const messageElement = document.createElement('div');
+    messageElement.className = `message ${isSent ? 'sent' : 'received'}`;
+    messageElement.innerHTML = `
+        ${!isSent ? `<img src="${activeProfilePicSrc}" alt="${messageData.sender_username}" class="profile-pic" style="width: 30px; height: 30px;">` : ''}
+        <div>
+            <div class="message-bubble">
+                ${messageData.media_url ? `
+                    <div class="message-media">
+                        ${messageData.media_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? 
+                            `<img src="${messageData.media_url}" alt="Media" style="max-width: 200px; max-height: 200px; border-radius: 8px; cursor: pointer;" onclick="window.open('${messageData.media_url}', '_blank')">` : 
+                            `<video controls style="max-width: 200px; max-height: 200px; border-radius: 8px;"><source src="${messageData.media_url}"></video>`
+                        }
+                    </div>
+                ` : ''}
+                ${messageData.message ? `<div>${messageData.message}</div>` : ''}
+            </div>
+            <div class="message-time">
+                ${formatTimestamp(messageData.timestamp)} ${isSent ? '<span class="checkmark"></span>' : ''}
+            </div>
+        </div>
+    `;
+    
+    messagesContainer.appendChild(messageElement);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function formatTimestamp(isoString) {
+    const date = new Date(isoString);
+    const now = new Date();
+    
+    if (date.toDateString() === now.toDateString()) {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else {
+        return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+}
+
+// File handling functions
+let selectedFile = null;
+
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        selectedFile = file;
+        showFilePreview(file);
+    }
+}
+
+function showFilePreview(file) {
+    const preview = document.getElementById('file-preview');
+    const fileInfo = document.getElementById('file-info');
+    
+    const fileSize = (file.size / 1024 / 1024).toFixed(2);
+    const fileType = file.type.startsWith('image/') ? 'Imagen' : 'Video';
+    
+    fileInfo.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="background: #e91e63; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${fileType}</span>
+            <div>
+                <div style="font-weight: bold; font-size: 14px;">${file.name}</div>
+                <div style="color: #666; font-size: 12px;">${fileSize} MB</div>
+            </div>
+        </div>
+    `;
+    
+    preview.style.display = 'block';
+}
+
+function removeFilePreview() {
+    selectedFile = null;
+    document.getElementById('file-preview').style.display = 'none';
+    document.getElementById('chat-media-input').value = '';
+}
+
+// CSS for active contact
+document.head.insertAdjacentHTML('beforeend', `
+<style>
+.contact-item.active {
+    background-color: rgba(233, 30, 99, 0.1);
+    border-left: 3px solid #e91e63;
+}
+
+.contact-item {
+    cursor: pointer;
+}
+
+.contact-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.chat-placeholder div {
+    text-align: center;
+}
+</style>
+`);
+</script>
+{% endblock %}
