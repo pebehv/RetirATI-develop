@@ -229,9 +229,9 @@
 
 /* Tablet Styles */
 @media (max-width: 1024px) {
-    .main-content {
+    /*.main-content {
         padding: 20px 30px;
-    }
+    }*/
 
     .settings-container {
         padding: 25px;
@@ -241,7 +241,7 @@
 /* Mobile Styles */
 @media (max-width: 768px) {
     .main-content {
-        padding: 80px 20px 20px;
+        /*padding: 80px 20px 20px;*/
         width: 100%;
     }
 
@@ -280,6 +280,9 @@
     .btn {
         width: 100%;
         justify-content: center;
+    }
+    .close{
+        padding-left: 40%;
     }
 
     .notification-item {
