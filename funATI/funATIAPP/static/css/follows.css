@@ -344,6 +344,17 @@ form .remove-btn:focus {
     border-radius: 0;
     box-shadow: none;
     background-color: white; /* opcional, pero consistente */
-    padding: 1rem 1rem 0 1rem; /* opcional: ajustar padding para móvil */
+    padding: 1rem ; /* opcional: ajustar padding para móvil */
+    margin: 3rem auto 3rem ;
+  }
+}
+@media (max-width: 350px) {
+  .post-header , .follower-item{
+    gap: 0px
+  }
+}
+@media (max-width: 315px) {
+  .follower-item{
+    display: block;
   }
 }

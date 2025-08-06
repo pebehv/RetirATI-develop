@@ -307,7 +307,7 @@
     .container {
         width: 100%;
         background: rgba(255, 255, 255, 0.95);
-        border-radius: 0;
+        border-radius: 25;
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         backdrop-filter: blur(10px);
         padding: 1rem 0;
@@ -328,7 +328,7 @@
         height: 400px;
     }
 
-    .chat {
+    /*.chat {
         display: none;
-    }
+    }*/
 }

@@ -200,7 +200,7 @@ body {
   height: 4rem;
 }
 
-.edit-profile-container {
+.edit-profile-button-container {
   display: flex;
   justify-content: flex-end;
 }

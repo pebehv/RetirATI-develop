@@ -68,7 +68,7 @@
 </div>
 <!-- Botón de editar perfil -->
 {% if user.is_authenticated and user.id == profile.user.id %}
-<div class="edit-profile-container">
+<div class="edit-profile-button-container">
     <a href="{% url 'funATIAPP:edit_profile' %}" class="edit-profile">
         <!-- SVG ... -->
         Editar Perfil

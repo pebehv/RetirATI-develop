@@ -20,6 +20,7 @@ body {
   text-align: center;
   position: relative;
   top: -60px; /* sube todo el contenido visualmente */
+  margin: 0px 15px;
 }
 
 /* Logo centrado y más arriba */

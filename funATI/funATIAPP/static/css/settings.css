@@ -263,6 +263,7 @@
     .password-row {
         grid-template-columns: 1fr;
         gap: 15px;
+        display: block;
     }
 
     .button-group {
