@@ -733,10 +733,6 @@ form .media-preview-img {
     display: none;
   }
 
-  .profile-btn::after {
-    content: "👤";
-    font-size: 24px;
-  }
 
   .logout-btn {
     display: none;
