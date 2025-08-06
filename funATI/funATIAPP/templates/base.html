@@ -19,7 +19,33 @@
     {% include 'menu-main.html' %}
     
     <div class="main-content">
+
         <div class="top-bar">
+                
+            <div class="profile">
+                {% if user.is_authenticated %}
+                <a href="{% url 'funATIAPP:profile' %}" class="profile-btn">
+                <span class="sidebar-avatar">
+                    {% if user.profile.avatar %}
+                    <img src="{{ user.profile.avatar.url }}" alt="Avatar" class="sidebar-avatar-img" />
+                    {% else %}
+                    <img src="{% static 'assets/user-placeholder.png' %}" alt="Avatar" class="sidebar-avatar-img" />
+                    {% endif %}
+                </span>
+                <span class="user-info user-info2">
+                    <span class="user-name">
+                    {% if user.first_name or user.last_name %}
+                        {{ user.first_name }} {{ user.last_name }}
+                    {% else %}
+                        {{ user.username }}
+                    {% endif %}
+                    </span>
+                    <span class="user-username">@{{ user.username }}</span>
+                </span>
+                </a>
+                {% endif %}
+                
+            </div>
             <h1>{% block page_title %}FunATI{% endblock %}</h1>
         </div>
         
@@ -29,6 +55,7 @@
         </div>
     </div>
     
+
     {% block extra_js %}{% endblock %}
     
     <script src="{% static 'js/theme.js' %}"></script>
