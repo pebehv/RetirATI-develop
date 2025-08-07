@@ -3,7 +3,7 @@
 }
 
 .profile{
-    visibility: hidden;
+    display: none;
   }
 
 .media-input-btn {
@@ -779,7 +779,7 @@ form .media-preview-img {
 
 @media (max-width: 600px) {
   .profile{
-    visibility: visible;
+    display: block;
     margin: 20px 0px;
   }
   body {
